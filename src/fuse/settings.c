@@ -20,7 +20,7 @@ int settings_init(int *first_arg, int argc, char **argv)
 
    settings_current.sound = 1;
    settings_current.sound_force_8bit = 0;
-   settings_current.sound_freq = 44100;
+   settings_current.sound_freq = 192000;
    settings_current.sound_load = 1;
    
    settings_current.joy_kempston = 1;

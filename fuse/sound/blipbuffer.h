@@ -1,228 +1,104 @@
-/* blipbuffer.h
- Band-limited sound synthesis and buffering
+/** Sample buffer that resamples from input clock rate to output sample rate */
 
- Blip_Buffer 0.4.0
+/* blip_buf $vers */
+#ifndef BLIP_BUF_H 
+#define BLIP_BUF_H
 
-Original C++ source:
-Blip_Buffer 0.4.0. http://www.slack.net/~ant/
+#ifdef __cplusplus
+	extern "C" {
+#endif
 
-Copyright (C) 2003-2006 Shay Green. This module is free software; you
-can redistribute it and/or modify it under the terms of the GNU Lesser
-General Public License as published by the Free Software Foundation; either
-version 2.1 of the License, or (at your option) any later version. This
-module is distributed in the hope that it will be useful, but WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for
-more details. You should have received a copy of the GNU Lesser General
-Public License along with this module; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+/** First parameter of most functions is blip_t*, or const blip_t* if nothing
+is changed. */
+typedef struct blip_t blip_t;
+typedef struct blip_buffer_state_t blip_buffer_state_t;
 
-partially reimplemented in C by Gergely Szasz
+/** Creates new buffer that can hold at most sample_count samples. Sets rates
+so that there are blip_max_ratio clocks per sample. Returns pointer to new
+buffer, or NULL if insufficient memory. */
+blip_t* blip_new( int sample_count );
 
-There is a lot of ambiguous thing in the original C++ source, some of them `rectified'
-(e.g. `int const blahblah = xxx` in the header translated to #define ), others not
-(e.g. blip_sample_t/imp_t/short or Blip_Synth_ in Blip_Synth, or the whole
-blip_eq_t struct ...).
+/** Sets approximate input clock rate and output sample rate. For every
+clock_rate input clocks, approximately sample_rate samples are generated. */
+void blip_set_rates( blip_t*, double clock_rate, double sample_rate );
 
-Functions originally implemented in the header are moved to .c.
-Classes converted to structs, member functions prefixed with: blip_buff_
-_blip_synth_ and blip_synth_ resp.
+enum { /** Maximum clock_rate/sample_rate ratio. For a given sample_rate,
+clock_rate must not be greater than sample_rate*blip_max_ratio. */
+blip_max_ratio = 1 << 20 };
 
-set_treble_eq() implemented with last argument as `double` instead
-of `blip_eq_t` because this function always call just with treble value,
-and C lack of `plain' type -> `struct' magic conversion/construction
-capabilities.
+/** Clears entire buffer. Afterwards, blip_samples_avail() == 0. */
+void blip_clear( blip_t* );
 
-The source now almost according to C89. (except of course `inline')
+/** Adds positive/negative delta into buffer at specified clock time. */
+void blip_add_delta( blip_t*, unsigned clock_time, int delta );
 
-*/
-#ifndef BLIP_BUFFER_H
-#define BLIP_BUFFER_H
+/** Same as blip_add_delta(), but uses faster, lower-quality synthesis. */
+void blip_add_delta_fast( blip_t*, unsigned clock_time, int delta );
 
-/*
- Time unit at source clock rate
-*/
+/** Reads and removes at most 'count' samples and writes them to to every other 
+element of 'out', allowing easy interleaving of two buffers into a stereo sample
+stream. Outputs 16-bit signed samples. Returns number of samples actually read.  */
+int blip_read_samples( blip_t*, short out [], int count, int stereo);
+
+/** Length of time frame, in clocks, needed to make sample_count additional
+samples available. */
+int blip_clocks_needed( const blip_t*, int sample_count );
+
+enum { /** Maximum number of samples that can be generated from one time frame. */
+blip_max_frame = 4000 };
+
+/** Makes input clocks before clock_duration available for reading as output
+samples. Also begins new time frame at clock_duration, so that clock time 0 in
+the new time frame specifies the same clock as clock_duration in the old time
+frame specified. Deltas can have been added slightly past clock_duration (up to
+however many clocks there are in two output samples). */
+void blip_end_frame( blip_t*, unsigned clock_duration );
+
+/** Number of buffered samples available for reading. */
+int blip_samples_avail( const blip_t* );
+
+/** Discards samples by moving the write pointer backwards directly,
+leaving the audio buffer dirty. */
+void blip_discard_samples_dirty(blip_t*, int count);
+
+/* Same as above function except sample is mixed from three blip buffers source */
+int blip_mix_samples( blip_t* m1, blip_t* m2, blip_t* m3, short out [], int count);
+
+/** Frees buffer. No effect if NULL is passed. */
+void blip_delete( blip_t* );
+
+
+
+/* Deprecated */
+typedef blip_t blip_buffer_t;
+
 typedef long blip_time_t;
 
 /*  Output samples are 16-bit signed, with a range of -32767 to 32767 */
 typedef short blip_sample_t;
 
-typedef const char *blargg_err_t;
+typedef struct blip_t Blip_Buffer;
+typedef struct blip_synth_t Blip_Synth;
 
-typedef long buf_t_;
 
-typedef unsigned long blip_resampled_time_t;
-
-# define BLIP_BUFFER_DEF_MSEC_LENGTH ( 1000 / 4 )
-# define BLIP_BUFFER_DEF_STEREO 0
-# define BLIP_BUFFER_DEF_ENTIRE_BUFF 1
-
-typedef struct Blip_Buffer_s {
-  unsigned long factor_;
-  blip_resampled_time_t offset_;
-  buf_t_ *buffer_;
-  long buffer_size_;
-  long reader_accum;
-  int bass_shift;
-  long sample_rate_;
-  long clock_rate_;
-  int bass_freq_;
-  int length_;
-} Blip_Buffer;
-
+/* Fuse */
 Blip_Buffer *new_Blip_Buffer( void );
-
 void delete_Blip_Buffer( Blip_Buffer ** buff );
-
-/*  Set output sample rate and buffer length in milliseconds (1/1000 sec, defaults
- to 1/4 second), then clear buffer. Returns NULL on success, otherwise if there
- isn't enough memory, returns error without affecting current buffer setup.
-*/
-blargg_err_t blip_buffer_set_sample_rate( Blip_Buffer * buff,
-                                          long samples_per_sec,
-                                          int msec_length );
-
-/*  Set number of source time units per second
-*/
-void blip_buffer_set_clock_rate( Blip_Buffer * buff, long rate );
-
-/*  End current time frame of specified duration and make its samples available
- (along with any still-unread samples) for reading with read_samples(). Begins
- a new time frame at the end of the current frame.
-*/
-void blip_buffer_end_frame( Blip_Buffer * buff, blip_time_t time );
-
-/*  Read at most 'max_samples' out of buffer into 'dest', removing them from from
- the buffer. Returns number of samples actually read and removed. If stereo is
- true, increments 'dest' one extra time after writing each sample, to allow
- easy interleving of two channels into a stereo output buffer.
-*/
-long blip_buffer_read_samples( Blip_Buffer * buff, blip_sample_t * dest,
-                               long max_samples, int stereo );
-
-/*  Additional optional features */
-
-/*  Set frequency high-pass filter frequency, where higher values reduce bass more */
+void blip_buffer_set_clock_rate( Blip_Buffer * buff, long cps );
+char *blip_buffer_set_sample_rate( Blip_Buffer * buff, long samples_per_sec, int msec_length );
+long blip_buffer_read_samples( Blip_Buffer * buff, blip_sample_t * out, long max_samples, int stereo );
+void blip_buffer_end_frame( Blip_Buffer * buff, blip_time_t t );
 void blip_buffer_set_bass_freq( Blip_Buffer * buff, int frequency );
 
-/*  Remove all available samples and clear buffer to silence. If 'entire_buffer' is
- false, just clears out any samples waiting rather than the entire buffer.
-*/
-void blip_buffer_clear( Blip_Buffer * buff, int entire_buffer );
-
-/*  Number of samples available for reading with read_samples()
-*/
-long
-blip_buffer_samples_avail( Blip_Buffer * buff );
-
-/*  Remove 'count' samples from those waiting to be read
-*/
-void blip_buffer_remove_samples( Blip_Buffer * buff, long count );
-
-/*  Experimental features */
-
-void blip_buffer_remove_silence( Blip_Buffer * buff, long count );
-
-blip_resampled_time_t blip_buffer_clock_rate_factor( Blip_Buffer * buff,
-                                                    long clock_rate );
-
-/*
- Number of bits in resample ratio fraction. Higher values give a more accurate ratio
- but reduce maximum buffer size.
-*/
-#ifndef BLIP_BUFFER_ACCURACY
-#define BLIP_BUFFER_ACCURACY 16
-#endif
-/*
- Number bits in phase offset. Fewer than 6 bits (64 phase offsets) results in
- noticeable broadband noise when synthesizing high frequency square waves.
- Affects size of Blip_Synth objects since they store the waveform directly.
-*/
-#ifndef BLIP_PHASE_BITS
-#define BLIP_PHASE_BITS 6
-#endif
-
-/*	 Internal */
-#define BLIP_WIDEST_IMPULSE_ 16
-#define BLIP_RES (1 << BLIP_PHASE_BITS)
-
-struct blip_eq_s;
-
-typedef struct Blip_Synth_s_ {
-  double volume_unit_;
-  short *impulses;
-  long kernel_unit;
-
-  Blip_Buffer *buf;
-  int last_amp;
-  int delta_factor;
-} Blip_Synth_;
-
-int _blip_synth_impulses_size( Blip_Synth_ * synth_ );
-
-void _blip_synth_adjust_impulse( Blip_Synth_ * synth_ );
-
-void _blip_synth_treble_eq( Blip_Synth_ * synth_, struct blip_eq_s *eq );
-
-void _blip_synth_volume_unit( Blip_Synth_ * synth_, double v );
-
-/*  Quality level. Start with blip_good_quality. */
-#define BLIP_MED_QUALITY 8
-#define BLIP_GOOD_QUALITY 12
-#define BLIP_HIGH_QUALITY 16
-
-/*  Range specifies the greatest expected change in amplitude. Calculate it
- by finding the difference between the maximum and minimum expected
- amplitudes (max - min). */
-
-typedef short imp_t;
-
-typedef struct Blip_Synth_s {
-  imp_t *impulses;
-  Blip_Synth_ impl;
-} Blip_Synth;
-
-void blip_synth_set_volume( Blip_Synth * synth, double v );
-
-/*  Configure low-pass filter (see notes.txt)*/
-void blip_synth_set_treble_eq( Blip_Synth * synth, double treble );
-
-/*  Get/set Blip_Buffer used for output */
-void blip_synth_set_output( Blip_Synth * synth, Blip_Buffer * b );
-
-/*  Update amplitude of waveform at given time. Using this requires a separate
-Blip_Synth for each waveform. */
-void blip_synth_update( Blip_Synth * synth, blip_time_t time,
-                        int amplitude );
-
-/*  Low-level interface */
-
-void blip_synth_offset_resampled( Blip_Synth * synth,
-                                 blip_resampled_time_t, int delta,
-                                 Blip_Buffer * buff );
 Blip_Synth *new_Blip_Synth( void );
-
 void delete_Blip_Synth( Blip_Synth ** synth );
+void blip_synth_set_output( Blip_Synth * synth, Blip_Buffer * b );
+void blip_synth_set_volume( Blip_Synth * synth, double v );
+void blip_synth_set_treble_eq( Blip_Synth * synth, double treble );
+void blip_synth_update( Blip_Synth * synth, blip_time_t t, int amp );
 
-#define BLIP_EQ_DEF_CUTOFF 0
-/*  Low-pass equalization parameters */
-
-typedef struct blip_eq_s {
-  double treble;
-  long rolloff_freq;
-  long sample_rate;
-  long cutoff_freq;
-} blip_eq_t;
-
-#define BLIP_SAMPLE_BITS 30
-
-/*  End of public interface */
-
-#define BLIP_UNSCALED 65535
-#define BLIP_MAX_LENGTH 0
-
-#define BLIP_SYNTH_QUALITY BLIP_GOOD_QUALITY
-#define BLIP_SYNTH_RANGE BLIP_UNSCALED
-#define BLIP_SYNTH_WIDTH BLIP_SYNTH_QUALITY    /* `quality' of synth as `width' of synth_ */
+#ifdef __cplusplus
+	}
+#endif
 
 #endif
