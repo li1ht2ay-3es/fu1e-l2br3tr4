@@ -3,12 +3,10 @@
 #include <libspectrum.h>
 #include <externs.h>
 
-extern int retro_audio_freq;
-
 int sound_lowlevel_init(const char *device, int *freqptr, int *stereoptr)
 {
    (void)device;
-   *freqptr = retro_audio_freq;
+   *freqptr = settings_current.sound_freq;
    return 0;
 }
 
