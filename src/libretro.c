@@ -281,6 +281,7 @@ static const struct retro_variable core_vars[] =
    { "fuse_load_sound", "Tape Load Sound; enabled|disabled" },
    { "fuse_speaker_type", "Speaker Type; tv speaker|beeper|unfiltered" },
    { "fuse_ay_stereo_separation", "AY Stereo Separation; none|acb|abc" },
+   { "fuse_sound_freq", "Internal Sound Rate; 44100|48000|72000|96000|144000|192000|288000|384000|576000|768000|1152000|1536000" },
    { "fuse_key_ovrlay_transp", "Transparent Keyboard Overlay; enabled|disabled" },
    { "fuse_key_hold_time", "Time to Release Key in ms; 500|1000|100|300" },
    { "fuse_joypad_left",    "Joypad Left mapping; " SPECTRUMKEYS },
@@ -478,6 +479,13 @@ int update_variables(int force)
       }
 
       settings_current.stereo_ay = utils_safe_strdup(option == 1 ? "ACB" : option == 2 ? "ABC" : "None");
+   }
+
+   {
+      const char* value;
+      int option = coreopt(env_cb, core_vars, "fuse_sound_freq", &value);
+
+      settings_current.sound_freq = option >= 0 ? strtol(value, NULL, 10) : 44100;
    }
 
    keyb_transparent = coreopt(env_cb, core_vars, "fuse_key_ovrlay_transp", NULL) != 1;
@@ -876,7 +884,7 @@ void retro_get_system_av_info(struct retro_system_av_info *info)
    info->geometry.max_height = MAX_HEIGHT;
    info->geometry.aspect_ratio = 0.0f;
    info->timing.fps = machine->id == LIBSPECTRUM_MACHINE_48_NTSC ? 60.0 : 50.0;
-   info->timing.sample_rate = 192000.0;
+   info->timing.sample_rate = retro_audio_freq;
 }
 
 static void render_video(void)
