@@ -6,6 +6,8 @@
 #include <fuse/settings.c>
 #undef settings_init
 
+extern int retro_audio_freq;
+
 // Replacement function for settings_init so we can change the settings before
 // the emulation starts without having to build an extensive argv.
 int settings_init(int *first_arg, int argc, char **argv)
@@ -20,7 +22,7 @@ int settings_init(int *first_arg, int argc, char **argv)
 
    settings_current.sound = 1;
    settings_current.sound_force_8bit = 0;
-   settings_current.sound_freq = 192000;
+   settings_current.sound_freq = retro_audio_freq;
    settings_current.sound_load = 1;
    
    settings_current.joy_kempston = 1;
