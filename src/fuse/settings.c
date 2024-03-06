@@ -6,8 +6,6 @@
 #include <fuse/settings.c>
 #undef settings_init
 
-extern int retro_audio_freq;
-
 // Replacement function for settings_init so we can change the settings before
 // the emulation starts without having to build an extensive argv.
 int settings_init(int *first_arg, int argc, char **argv)
