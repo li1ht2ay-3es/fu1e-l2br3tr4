@@ -884,7 +884,7 @@ void retro_get_system_av_info(struct retro_system_av_info *info)
    info->geometry.max_height = MAX_HEIGHT;
    info->geometry.aspect_ratio = 0.0f;
    info->timing.fps = machine->id == LIBSPECTRUM_MACHINE_48_NTSC ? 60.0 : 50.0;
-   info->timing.sample_rate = retro_audio_freq;
+   info->timing.sample_rate = settings_current.sound_freq;
 }
 
 static void render_video(void)
