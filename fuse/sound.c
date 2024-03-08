@@ -112,7 +112,7 @@ static double
 sound_get_volume( int volume )
 {
   if( volume < 0 ) volume = 0;
-  else if( volume > 100 ) volume = 100;
+  else if( volume > 200 ) volume = 200;
 
   return volume / 100.0;
 }
