@@ -561,9 +561,10 @@ int update_variables(int force)
       option = (option * master_volume) / 100;
 
       if (left_beeper_synth)
-         blip_synth_set_volume(left_beeper_synth, option / 100.0);
+         //blip_synth_set_volume(left_beeper_synth, option / 100.0);
+		blip_synth_set_volume(left_beeper_synth, 1.0);
 
-      if (right_beeper_synth)
+      if(0) if (right_beeper_synth)
          blip_synth_set_volume(right_beeper_synth, option / 100.0);
    }
 
