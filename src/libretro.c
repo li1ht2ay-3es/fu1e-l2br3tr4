@@ -561,11 +561,10 @@ int update_variables(int force)
       option = (option * master_volume) / 100;
 
       if (left_beeper_synth)
-         blip_synth_set_volume(left_beeper_synth, option);
+         blip_synth_set_volume(left_beeper_synth, option / 100.0);
 
-if(0)
       if (right_beeper_synth)
-         blip_synth_set_volume(right_beeper_synth, option);
+         blip_synth_set_volume(right_beeper_synth, option / 100.0);
    }
 
 if(0)
@@ -580,22 +579,22 @@ if(0)
       option = (option * master_volume) / 100;
 
       if (ay_a_synth)
-         blip_synth_set_volume(ay_a_synth, option);
+         blip_synth_set_volume(ay_a_synth, option / 100.0);
 
       if (ay_b_synth)
-         blip_synth_set_volume(ay_b_synth, option);
+         blip_synth_set_volume(ay_b_synth, option / 100.0);
 
       if (ay_c_synth)
-         blip_synth_set_volume(ay_c_synth, option);
+         blip_synth_set_volume(ay_c_synth, option / 100.0);
 
       if (ay_a_synth_r)
-         blip_synth_set_volume(ay_a_synth_r, option);
+         blip_synth_set_volume(ay_a_synth_r, option / 100.0);
 
       if (ay_b_synth_r)
-         blip_synth_set_volume(ay_b_synth_r, option);
+         blip_synth_set_volume(ay_b_synth_r, option / 100.0);
 
       if (ay_c_synth_r)
-         blip_synth_set_volume(ay_c_synth_r, option);
+         blip_synth_set_volume(ay_c_synth_r, option / 100.0);
    }
 
 if(0)
@@ -609,10 +608,10 @@ if(0)
       option = (option * master_volume) / 100;
 
       if (left_covox_synth)
-         blip_synth_set_volume(left_covox_synth, option);
+         blip_synth_set_volume(left_covox_synth, option / 100.0);
 
       if (right_covox_synth)
-         blip_synth_set_volume(right_covox_synth, option);
+         blip_synth_set_volume(right_covox_synth, option / 100.0);
    }
 
 if(0)
@@ -626,10 +625,10 @@ if(0)
       option = (option * master_volume) / 100;
 
       if (left_specdrum_synth)
-         blip_synth_set_volume(left_specdrum_synth, option);
+         blip_synth_set_volume(left_specdrum_synth, option / 100.0);
 
       if (right_specdrum_synth)
-         blip_synth_set_volume(right_specdrum_synth, option);
+         blip_synth_set_volume(right_specdrum_synth, option / 100.0);
    }
 
    return flags;
