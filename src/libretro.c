@@ -567,6 +567,7 @@ int update_variables(int force)
          blip_synth_set_volume(right_beeper_synth, option);
    }
 
+if(0)
    {
       extern Blip_Synth *ay_a_synth, *ay_b_synth, *ay_c_synth;
       extern Blip_Synth *ay_a_synth_r, *ay_b_synth_r, *ay_c_synth_r;
@@ -596,6 +597,7 @@ int update_variables(int force)
          blip_synth_set_volume(ay_c_synth_r, option);
    }
 
+if(0)
    {
       extern Blip_Synth *left_covox_synth, *right_covox_synth;
 
@@ -612,6 +614,7 @@ int update_variables(int force)
          blip_synth_set_volume(right_covox_synth, option);
    }
 
+if(0)
    {
       extern Blip_Synth *left_specdrum_synth, *right_specdrum_synth;
 
