@@ -552,84 +552,43 @@ int update_variables(int force)
    }
 
    {
-      extern Blip_Synth *left_beeper_synth, *right_beeper_synth;
-
       const char* value;
       int option = coreopt(env_cb, core_vars, "fuse_beeper_volume", &value);
 
       option = (option >= 0) ? strtol(value, NULL, 10) : 100;
       option = (option * master_volume) / 100;
 
-      if (left_beeper_synth)
-         //blip_synth_set_volume(left_beeper_synth, option / 100.0);
-		blip_synth_set_volume(left_beeper_synth, 1.0);
-
-      if(0) if (right_beeper_synth)
-         blip_synth_set_volume(right_beeper_synth, option / 100.0);
+      settings_current.volume_beeper = option;
    }
 
-if(0)
    {
-      extern Blip_Synth *ay_a_synth, *ay_b_synth, *ay_c_synth;
-      extern Blip_Synth *ay_a_synth_r, *ay_b_synth_r, *ay_c_synth_r;
-
       const char* value;
       int option = coreopt(env_cb, core_vars, "fuse_ay_volume", &value);
 
       option = (option >= 0) ? strtol(value, NULL, 10) : 100;
       option = (option * master_volume) / 100;
 
-      if (ay_a_synth)
-         blip_synth_set_volume(ay_a_synth, option / 100.0);
-
-      if (ay_b_synth)
-         blip_synth_set_volume(ay_b_synth, option / 100.0);
-
-      if (ay_c_synth)
-         blip_synth_set_volume(ay_c_synth, option / 100.0);
-
-      if (ay_a_synth_r)
-         blip_synth_set_volume(ay_a_synth_r, option / 100.0);
-
-      if (ay_b_synth_r)
-         blip_synth_set_volume(ay_b_synth_r, option / 100.0);
-
-      if (ay_c_synth_r)
-         blip_synth_set_volume(ay_c_synth_r, option / 100.0);
+      settings_current.volume_ay = option;
    }
 
-if(0)
    {
-      extern Blip_Synth *left_covox_synth, *right_covox_synth;
-
       const char* value;
       int option = coreopt(env_cb, core_vars, "fuse_covox_volume", &value);
 
       option = (option >= 0) ? strtol(value, NULL, 10) : 100;
       option = (option * master_volume) / 100;
 
-      if (left_covox_synth)
-         blip_synth_set_volume(left_covox_synth, option / 100.0);
-
-      if (right_covox_synth)
-         blip_synth_set_volume(right_covox_synth, option / 100.0);
+      settings_current.volume_covox = option;
    }
 
-if(0)
    {
-      extern Blip_Synth *left_specdrum_synth, *right_specdrum_synth;
-
       const char* value;
       int option = coreopt(env_cb, core_vars, "fuse_specdrum_volume", &value);
 
       option = (option >= 0) ? strtol(value, NULL, 10) : 100;
       option = (option * master_volume) / 100;
 
-      if (left_specdrum_synth)
-         blip_synth_set_volume(left_specdrum_synth, option / 100.0);
-
-      if (right_specdrum_synth)
-         blip_synth_set_volume(right_specdrum_synth, option / 100.0);
+      settings_current.volume_specdrum = option;
    }
 
    return flags;
@@ -1130,14 +1089,7 @@ static void render_video(void)
 
 void retro_run(void)
 {
-   static bool first = true;
    bool updated = false;
-
-   if (first == true)
-   {
-      update_variables(0);  /* sound */
-      first = false;
-   }
 
    if (display_joystick_type == TRUE)
    {
@@ -1179,6 +1131,9 @@ void retro_run(void)
       {
          machine_select( machine->id );
       }
+
+      fuse_emulation_pause();  /* sound volume */
+      fuse_emulation_unpause();
    }
 
    total_time_ms += frame_time;
