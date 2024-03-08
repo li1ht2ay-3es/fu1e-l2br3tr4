@@ -23,6 +23,10 @@
 
 #include "ui/uimedia.h"
 
+#include <sound/blipbuffer.h>
+
+static int master_volume = 100;
+
 static void dummy_log(enum retro_log_level level, const char *fmt, ...)
 {
    (void)level;
@@ -281,7 +285,6 @@ static const struct retro_variable core_vars[] =
    { "fuse_load_sound", "Tape Load Sound; enabled|disabled" },
    { "fuse_speaker_type", "Speaker Type; tv speaker|beeper|unfiltered" },
    { "fuse_ay_stereo_separation", "AY Stereo Separation; none|acb|abc" },
-   { "fuse_sound_freq", "Internal Sound Rate; 44100|48000|72000|96000|144000|192000|288000|384000|576000|768000|1152000|1536000" },
    { "fuse_key_ovrlay_transp", "Transparent Keyboard Overlay; enabled|disabled" },
    { "fuse_key_hold_time", "Time to Release Key in ms; 500|1000|100|300" },
    { "fuse_joypad_left",    "Joypad Left mapping; " SPECTRUMKEYS },
@@ -299,6 +302,12 @@ static const struct retro_variable core_vars[] =
    { "fuse_joypad_r2",      "Joypad R2 button mapping; " SPECTRUMKEYS },
    { "fuse_joypad_l3",      "Joypad L3 button mapping; " SPECTRUMKEYS },
    { "fuse_joypad_r3",      "Joypad R3 button mapping; " SPECTRUMKEYS },
+   { "fuse_sound_freq",		"Internal Sound Rate; 44100|48000|72000|96000|144000|192000|288000|384000|576000|768000|1152000|1536000" },
+   { "fuse_master_volume", "Master Volume; 100|105|110|115|120|125|130|135|140|145|150|155|160|165|170|175|180|185|190|195|200|0|5|10|15|20|25|30|35|40|45|50|55|60|65|70|75|80|85|90|95" },
+   { "fuse_beeper_volume", "Beeper Volume; 100|105|110|115|120|125|130|135|140|145|150|155|160|165|170|175|180|185|190|195|200|0|5|10|15|20|25|30|35|40|45|50|55|60|65|70|75|80|85|90|95" },
+   { "fuse_ay_volume", "AY Volume; 100|105|110|115|120|125|130|135|140|145|150|155|160|165|170|175|180|185|190|195|200|0|5|10|15|20|25|30|35|40|45|50|55|60|65|70|75|80|85|90|95" },
+   { "fuse_covox_volume", "Covox Volume; 100|105|110|115|120|125|130|135|140|145|150|155|160|165|170|175|180|185|190|195|200|0|5|10|15|20|25|30|35|40|45|50|55|60|65|70|75|80|85|90|95" },
+   { "fuse_specdrum_volume", "Specdrum Volume; 100|105|110|115|120|125|130|135|140|145|150|155|160|165|170|175|180|185|190|195|200|0|5|10|15|20|25|30|35|40|45|50|55|60|65|70|75|80|85|90|95" },
    { NULL, NULL },
 };
 
@@ -354,7 +363,7 @@ int update_variables(int force)
          }
 
          machine = new_machine;
-         frame_time = 1000.0 / ( machine->id == LIBSPECTRUM_MACHINE_48_NTSC ? 60.0 : 50.0 );
+         frame_time = 1000.0 / ( (machine->id == LIBSPECTRUM_MACHINE_48_NTSC) ? 60.0 : 50.0 );
          flags |= UPDATE_MACHINE;
       }
 
@@ -467,7 +476,7 @@ int update_variables(int force)
          libspectrum_free((void*)settings_current.speaker_type);
       }
 
-      settings_current.speaker_type = utils_safe_strdup(option == 1 ? "Beeper" : option == 2 ? "Unfiltered" : "TV speaker");
+      settings_current.speaker_type = utils_safe_strdup((option == 1) ? "Beeper" : (option == 2) ? "Unfiltered" : "TV speaker");
    }
 
    {
@@ -478,14 +487,7 @@ int update_variables(int force)
          libspectrum_free((void*)settings_current.stereo_ay);
       }
 
-      settings_current.stereo_ay = utils_safe_strdup(option == 1 ? "ACB" : option == 2 ? "ABC" : "None");
-   }
-
-   {
-      const char* value;
-      int option = coreopt(env_cb, core_vars, "fuse_sound_freq", &value);
-
-      settings_current.sound_freq = option >= 0 ? strtol(value, NULL, 10) : 44100;
+      settings_current.stereo_ay = utils_safe_strdup((option == 1) ? "ACB" : (option == 2) ? "ABC" : "None");
    }
 
    keyb_transparent = coreopt(env_cb, core_vars, "fuse_key_ovrlay_transp", NULL) != 1;
@@ -493,7 +495,7 @@ int update_variables(int force)
    {
       const char* value;
       int option = coreopt(env_cb, core_vars, "fuse_key_hold_time", &value);
-      keyb_hold_time = option >= 0 ? strtoll(value, NULL, 10) * 1000LL : 500000LL;
+      keyb_hold_time = (option >= 0) ? strtoll(value, NULL, 10) * 1000LL : 500000LL;
    }
 
    const char* value;
@@ -541,6 +543,71 @@ int update_variables(int force)
 
    option = coreopt(env_cb, core_vars, "fuse_joypad_start", &value );
    joymap[ RETRO_DEVICE_ID_JOYPAD_START ] = spectrum_keys_map[option];
+
+   {
+      const char* value;
+      int option = coreopt(env_cb, core_vars, "fuse_master_volume", &value);
+
+      master_volume = (option >= 0) ? strtol(value, NULL, 10) : 100;
+   }
+
+   {
+      extern Blip_Synth *left_beeper_synth, *right_beeper_synth;
+
+      const char* value;
+      int option = coreopt(env_cb, core_vars, "fuse_beeper_volume", &value);
+
+      option = (option >= 0) ? strtol(value, NULL, 10) : 100;
+      option = (option * master_volume) / 100;
+
+      blip_synth_set_volume(left_beeper_synth, option);
+      blip_synth_set_volume(right_beeper_synth, option);
+   }
+
+   {
+      extern Blip_Synth *ay_a_synth, *ay_b_synth, *ay_c_synth;
+      extern Blip_Synth *ay_a_synth_r, *ay_b_synth_r, *ay_c_synth_r;
+
+      const char* value;
+      int option = coreopt(env_cb, core_vars, "fuse_ay_volume", &value);
+
+      option = (option >= 0) ? strtol(value, NULL, 10) : 100;
+      option = (option * master_volume) / 100;
+
+      blip_synth_set_volume(ay_a_synth, option);
+      blip_synth_set_volume(ay_b_synth, option);
+      blip_synth_set_volume(ay_c_synth, option);
+
+      blip_synth_set_volume(ay_a_synth_r, option);
+      blip_synth_set_volume(ay_b_synth_r, option);
+      blip_synth_set_volume(ay_c_synth_r, option);
+   }
+
+   {
+      extern Blip_Synth *left_covox_synth, *right_covox_synth;
+
+      const char* value;
+      int option = coreopt(env_cb, core_vars, "fuse_covox_volume", &value);
+
+      option = (option >= 0) ? strtol(value, NULL, 10) : 100;
+      option = (option * master_volume) / 100;
+
+      blip_synth_set_volume(left_covox_synth, option);
+      blip_synth_set_volume(right_covox_synth, option);
+   }
+
+   {
+      extern Blip_Synth *left_specdrum_synth, *right_specdrum_synth;
+
+      const char* value;
+      int option = coreopt(env_cb, core_vars, "fuse_specdrum_volume", &value);
+
+      option = (option >= 0) ? strtol(value, NULL, 10) : 100;
+      option = (option * master_volume) / 100;
+
+      blip_synth_set_volume(left_specdrum_synth, option);
+      blip_synth_set_volume(right_specdrum_synth, option);
+   }
 
    return flags;
 }
@@ -883,7 +950,7 @@ void retro_get_system_av_info(struct retro_system_av_info *info)
    info->geometry.max_width = MAX_WIDTH;
    info->geometry.max_height = MAX_HEIGHT;
    info->geometry.aspect_ratio = 0.0f;
-   info->timing.fps = machine->id == LIBSPECTRUM_MACHINE_48_NTSC ? 60.0 : 50.0;
+   info->timing.fps = (machine->id == LIBSPECTRUM_MACHINE_48_NTSC) ? 60.0 : 50.0;
    info->timing.sample_rate = settings_current.sound_freq;
 }
 
@@ -1333,7 +1400,7 @@ void retro_unload_game(void)
 
 unsigned retro_get_region(void)
 {
-   return machine->id == LIBSPECTRUM_MACHINE_48_NTSC ? RETRO_REGION_NTSC : RETRO_REGION_PAL;
+   return (machine->id == LIBSPECTRUM_MACHINE_48_NTSC) ? RETRO_REGION_NTSC : RETRO_REGION_PAL;
 }
 
 // Dummy callbacks for the UI
