@@ -560,8 +560,11 @@ int update_variables(int force)
       option = (option >= 0) ? strtol(value, NULL, 10) : 100;
       option = (option * master_volume) / 100;
 
-      blip_synth_set_volume(left_beeper_synth, option);
-      blip_synth_set_volume(right_beeper_synth, option);
+      if (left_beeper_synth)
+      {
+         blip_synth_set_volume(left_beeper_synth, option);
+         blip_synth_set_volume(right_beeper_synth, option);
+      }
    }
 
    {
@@ -574,13 +577,16 @@ int update_variables(int force)
       option = (option >= 0) ? strtol(value, NULL, 10) : 100;
       option = (option * master_volume) / 100;
 
-      blip_synth_set_volume(ay_a_synth, option);
-      blip_synth_set_volume(ay_b_synth, option);
-      blip_synth_set_volume(ay_c_synth, option);
+      if (ay_a_synth)
+      {
+         blip_synth_set_volume(ay_a_synth, option);
+         blip_synth_set_volume(ay_b_synth, option);
+         blip_synth_set_volume(ay_c_synth, option);
 
-      blip_synth_set_volume(ay_a_synth_r, option);
-      blip_synth_set_volume(ay_b_synth_r, option);
-      blip_synth_set_volume(ay_c_synth_r, option);
+         blip_synth_set_volume(ay_a_synth_r, option);
+         blip_synth_set_volume(ay_b_synth_r, option);
+         blip_synth_set_volume(ay_c_synth_r, option);
+      }
    }
 
    {
@@ -592,8 +598,11 @@ int update_variables(int force)
       option = (option >= 0) ? strtol(value, NULL, 10) : 100;
       option = (option * master_volume) / 100;
 
-      blip_synth_set_volume(left_covox_synth, option);
-      blip_synth_set_volume(right_covox_synth, option);
+      if (left_covox_synth)
+      {
+         blip_synth_set_volume(left_covox_synth, option);
+         blip_synth_set_volume(right_covox_synth, option);
+	  }
    }
 
    {
@@ -605,8 +614,11 @@ int update_variables(int force)
       option = (option >= 0) ? strtol(value, NULL, 10) : 100;
       option = (option * master_volume) / 100;
 
-      blip_synth_set_volume(left_specdrum_synth, option);
-      blip_synth_set_volume(right_specdrum_synth, option);
+      if (left_specdrum_synth)
+      {
+         blip_synth_set_volume(left_specdrum_synth, option);
+         blip_synth_set_volume(right_specdrum_synth, option);
+      }
    }
 
    return flags;
@@ -1107,7 +1119,14 @@ static void render_video(void)
 
 void retro_run(void)
 {
+   static bool first = true;
    bool updated = false;
+
+   if (first == true)
+   {
+      update_variables(0);  /* sound */
+      first = false;
+   }
 
    if (display_joystick_type == TRUE)
    {
