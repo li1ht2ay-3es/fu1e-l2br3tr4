@@ -560,7 +560,7 @@ int update_variables(int force)
       option = (option >= 0) ? strtol(value, NULL, 10) : 100;
       option = (option * master_volume) / 100;
 
-      if (left_beeper_synth)
+      if (0 && left_beeper_synth)
       {
          blip_synth_set_volume(left_beeper_synth, option);
          blip_synth_set_volume(right_beeper_synth, option);
@@ -577,7 +577,7 @@ int update_variables(int force)
       option = (option >= 0) ? strtol(value, NULL, 10) : 100;
       option = (option * master_volume) / 100;
 
-      if (ay_a_synth)
+      if (0 && ay_a_synth)
       {
          blip_synth_set_volume(ay_a_synth, option);
          blip_synth_set_volume(ay_b_synth, option);
@@ -598,7 +598,7 @@ int update_variables(int force)
       option = (option >= 0) ? strtol(value, NULL, 10) : 100;
       option = (option * master_volume) / 100;
 
-      if (left_covox_synth)
+      if (0 && left_covox_synth)
       {
          blip_synth_set_volume(left_covox_synth, option);
          blip_synth_set_volume(right_covox_synth, option);
@@ -614,7 +614,7 @@ int update_variables(int force)
       option = (option >= 0) ? strtol(value, NULL, 10) : 100;
       option = (option * master_volume) / 100;
 
-      if (left_specdrum_synth)
+      if (0 && left_specdrum_synth)
       {
          blip_synth_set_volume(left_specdrum_synth, option);
          blip_synth_set_volume(right_specdrum_synth, option);
