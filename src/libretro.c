@@ -551,7 +551,6 @@ int update_variables(int force)
       master_volume = (option >= 0) ? strtol(value, NULL, 10) : 100;
    }
 
-if(0)
    {
       extern Blip_Synth *left_beeper_synth, *right_beeper_synth;
 
@@ -564,6 +563,7 @@ if(0)
       if (left_beeper_synth)
          blip_synth_set_volume(left_beeper_synth, option);
 
+if(0)
       if (right_beeper_synth)
          blip_synth_set_volume(right_beeper_synth, option);
    }
