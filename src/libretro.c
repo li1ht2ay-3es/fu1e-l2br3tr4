@@ -26,6 +26,8 @@
 #include <sound/blipbuffer.h>
 
 static int master_volume = 100;
+static int fastload_speed = 100;
+static int fastload_counter = 0;
 
 static void dummy_log(enum retro_log_level level, const char *fmt, ...)
 {
@@ -122,6 +124,7 @@ void*  snapshot_buffer;
 size_t snapshot_size;
 void* tape_data;
 size_t tape_size;
+int joymap[16];
 int joymap[16];
 
 static const struct { unsigned x; unsigned y; } keyb_positions[4] = {
@@ -302,6 +305,7 @@ static const struct retro_variable core_vars[] =
    { "fuse_joypad_r2",      "Joypad R2 button mapping; " SPECTRUMKEYS },
    { "fuse_joypad_l3",      "Joypad L3 button mapping; " SPECTRUMKEYS },
    { "fuse_joypad_r3",      "Joypad R3 button mapping; " SPECTRUMKEYS },
+   { "fuse_fast_load_speed", "Tape Fast Load Speed; 100|80|60|40|20" },
    { "fuse_sound_freq",		"Internal Sound Rate; 44100|48000|72000|96000|144000|192000|288000|384000|576000|768000|1152000|1536000" },
    { "fuse_master_volume", "Master Volume; 100|105|110|115|120|125|130|135|140|145|150|155|160|165|170|175|180|185|190|195|200|0|5|10|15|20|25|30|35|40|45|50|55|60|65|70|75|80|85|90|95" },
    { "fuse_beeper_volume", "Beeper Volume; 100|105|110|115|120|125|130|135|140|145|150|155|160|165|170|175|180|185|190|195|200|0|5|10|15|20|25|30|35|40|45|50|55|60|65|70|75|80|85|90|95" },
@@ -589,6 +593,14 @@ int update_variables(int force)
       option = (option * master_volume) / 100;
 
       settings_current.volume_specdrum = option;
+   }
+
+
+   {
+      const char* value;
+      int option = coreopt(env_cb, core_vars, "fuse_fast_load_speed", &value);
+
+      fastload_speed = (option >= 0) ? strtol(value, NULL, 10) : 100;
    }
 
    return flags;
@@ -1134,6 +1146,25 @@ void retro_run(void)
 
       fuse_emulation_pause();  /* sound volume */
       fuse_emulation_unpause();
+   }
+
+   if (settings_current.fastload)
+   {
+      fastload_counter += 20;
+      fastload_counter %= 100;
+
+      if (fastload_speed > fastload_counter)
+	  {
+         settings_current.accelerate_loader = 1;
+         settings_current.tape_traps = 1;
+         settings_current.slt_traps = 1;
+      }
+      else
+      {
+         settings_current.accelerate_loader = 0;
+         settings_current.tape_traps = 0;
+         settings_current.slt_traps = 0;
+      }
    }
 
    total_time_ms += frame_time;
