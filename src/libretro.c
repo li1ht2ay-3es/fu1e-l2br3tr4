@@ -1186,7 +1186,7 @@ void retro_run(void)
       z80_do_opcodes();
       event_do_events();
    }
-   while(0); //while (!some_audio);
+   while (!some_audio);
 
    render_video();
 }
