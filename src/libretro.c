@@ -1150,10 +1150,11 @@ void retro_run(void)
 
    if (settings_current.fastload)
    {
-      fastload_counter += 1;
+      //fastload_counter += 1;
       fastload_counter %= 1000;
 
-      if (fastload_speed > fastload_counter)
+      //if (fastload_speed > fastload_counter)
+      if (fastload_speed == 1000)
 	  {
          settings_current.accelerate_loader = 1;
          settings_current.tape_traps = 1;
@@ -1163,7 +1164,7 @@ void retro_run(void)
       {
          settings_current.accelerate_loader = 0;
          settings_current.tape_traps = 0;
-         settings_current.slt_traps = 0;
+         settings_current.slt_traps = 1;
       }
    }
 
