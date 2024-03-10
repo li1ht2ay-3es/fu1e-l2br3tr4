@@ -1150,7 +1150,7 @@ void retro_run(void)
 
    if (settings_current.fastload)
    {
-      fastload_counter += 20;
+      fastload_counter += 1;
       fastload_counter %= 100;
 
       if (fastload_speed > fastload_counter)
