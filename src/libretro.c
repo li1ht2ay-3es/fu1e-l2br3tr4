@@ -311,7 +311,7 @@ static const struct retro_variable core_vars[] =
    { "fuse_ay_volume", "AY Volume; 100|105|110|115|120|125|130|135|140|145|150|155|160|165|170|175|180|185|190|195|200|0|5|10|15|20|25|30|35|40|45|50|55|60|65|70|75|80|85|90|95" },
    { "fuse_covox_volume", "Covox Volume; 100|105|110|115|120|125|130|135|140|145|150|155|160|165|170|175|180|185|190|195|200|0|5|10|15|20|25|30|35|40|45|50|55|60|65|70|75|80|85|90|95" },
    { "fuse_specdrum_volume", "Specdrum Volume; 100|105|110|115|120|125|130|135|140|145|150|155|160|165|170|175|180|185|190|195|200|0|5|10|15|20|25|30|35|40|45|50|55|60|65|70|75|80|85|90|95" },
-   { "fuse_fast_load_speed", "Tape Fast Load Speed; 100|1|5|10|15|20|25|50" },
+   { "fuse_fast_load_speed", "Tape Fast Load Speed; 1000|1|5|10|25|50|75|100|200|300|400|500|600|700|800|900" },
    { NULL, NULL },
 };
 
@@ -600,7 +600,7 @@ int update_variables(int force)
       const char* value;
       int option = coreopt(env_cb, core_vars, "fuse_fast_load_speed", &value);
 
-      fastload_speed = (option >= 0) ? strtol(value, NULL, 10) : 100;
+      fastload_speed = (option >= 0) ? strtol(value, NULL, 10) : 1000;
    }
 
    return flags;
@@ -1151,7 +1151,7 @@ void retro_run(void)
    if (settings_current.fastload)
    {
       fastload_counter += 1;
-      fastload_counter %= 100;
+      fastload_counter %= 1000;
 
       if (fastload_speed > fastload_counter)
 	  {
@@ -1186,7 +1186,7 @@ void retro_run(void)
       z80_do_opcodes();
       event_do_events();
    }
-   while (!some_audio);
+   while(0); //while (!some_audio);
 
    render_video();
 }
